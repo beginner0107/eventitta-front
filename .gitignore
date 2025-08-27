@@ -26,8 +26,9 @@ logs/
 
 # Editor / IDE
 .idea/
-.vscode/
 *.swp
+*.swo
+*~
 
 # OS
 .DS_Store
@@ -42,3 +43,26 @@ src/api/eventitta.ts
 # Local uploads / cache
 uploads/
 .cache/
+.eslintcache
+
+# Turbo
+.turbo/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Storybook
+storybook-static/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel

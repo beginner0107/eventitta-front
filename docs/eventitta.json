@@ -1,0 +1,1895 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Eventitta API 명세",
+    "description": "Eventitta 프로젝트의 REST API 명세서입니다.",
+    "version": "v1.0.0"
+  },
+  "servers": [{ "url": "http://localhost:8080", "description": "Generated server url" }],
+  "tags": [
+    { "name": "댓글 API", "description": "게시글 댓글 관련 API" },
+    { "name": "지역기반 커뮤니티 API", "description": "커뮤니티 게시글 API" },
+    { "name": "이벤트", "description": "지역 기반 이벤트 조회 API" },
+    { "name": "Meeting", "description": "모임 관련 API" },
+    { "name": "Dashboard", "description": "대시보드 통계 API" },
+    { "name": "인증 API", "description": "회원가입, 로그인 등의 인증 관련 API" }
+  ],
+  "paths": {
+    "/api/v1/users/me": {
+      "get": {
+        "tags": ["사용자 API"],
+        "summary": "내 프로필 조회",
+        "description": "인증된 사용자의 프로필 정보를 조회합니다.",
+        "operationId": "getMyProfile",
+        "responses": {
+          "200": {
+            "description": "프로필 조회 성공",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/UserProfileResponse" } }
+            }
+          },
+          "404": {
+            "description": "사용자를 찾을 수 없음",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["사용자 API"],
+        "summary": "내 프로필 수정",
+        "description": "인증된 사용자의 프로필 정보를 수정합니다.",
+        "operationId": "updateMyProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateProfileRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "잘못된 요청 데이터 (유효성 검사 실패)",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
+            }
+          },
+          "204": { "description": "프로필 수정 성공" },
+          "404": {
+            "description": "사용자를 찾을 수 없음",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
+            }
+          },
+          "409": {
+            "description": "이미 사용 중인 닉네임",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["사용자 API"],
+        "summary": "회원 탈퇴",
+        "description": "인증된 사용자의 계정을 탈퇴 처리합니다. 데이터는 삭제되지 않고 'deleted' 상태로 변경됩니다.",
+        "operationId": "deleteMe",
+        "responses": {
+          "204": { "description": "회원 탈퇴 성공" },
+          "404": {
+            "description": "사용자를 찾을 수 없음",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/password": {
+      "put": {
+        "tags": ["사용자 API"],
+        "summary": "비밀번호 변경",
+        "description": "인증된 사용자의 비밀번호를 변경합니다. 현재 비밀번호를 확인 후 새 비밀번호로 교체합니다.",
+        "operationId": "changePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChangePasswordRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "현재 비밀번호가 일치하지 않거나 새 비밀번호의 형식이 올바르지 않음",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
+            }
+          },
+          "404": {
+            "description": "사용자를 찾을 수 없음",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
+            }
+          },
+          "204": { "description": "비밀번호 변경 성공" }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}": {
+      "get": {
+        "tags": ["지역기반 커뮤니티 API"],
+        "summary": "게시글 상세 조회",
+        "operationId": "getPost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "게시글 상세보기 조회 성공",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PostDetailDto" } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["지역기반 커뮤니티 API"],
+        "summary": "게시글 수정",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdatePostRequest" } }
+          },
+          "required": true
+        },
+        "responses": { "204": { "description": "게시글 수정 성공" } }
+      },
+      "delete": {
+        "tags": ["지역기반 커뮤니티 API"],
+        "summary": "게시글 삭제",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": { "204": { "description": "게시글 삭제 성공" } }
+      }
+    },
+    "/api/v1/posts/{postId}/comments/{commentId}": {
+      "put": {
+        "tags": ["댓글 API"],
+        "summary": "댓글 수정",
+        "operationId": "updateComment",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CommentUpdateRequestDto" }
+            }
+          },
+          "required": true
+        },
+        "responses": { "200": { "description": "OK" } }
+      },
+      "delete": {
+        "tags": ["댓글 API"],
+        "summary": "댓글 삭제",
+        "operationId": "deleteComment",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/v1/meetings/{meetingId}": {
+      "get": {
+        "tags": ["Meeting"],
+        "summary": "모임 상세 조회",
+        "description": "특정 모임의 상세 정보와 참여자 목록을 조회합니다. 인증된 사용자가 아니더라도 조회 가능합니다.",
+        "operationId": "getMeetingDetail",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "description": "모임 ID",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "모임 조회 성공",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/MeetingDetailResponse" } }
+            }
+          },
+          "404": {
+            "description": "모임을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "400": {
+            "description": "이미 삭제된 모임인 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Meeting"],
+        "summary": "모임 수정",
+        "description": "모임 정보를 수정합니다. 모임 리더만 수정할 수 있습니다.",
+        "operationId": "updateMeeting",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MeetingUpdateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": { "description": "모임 수정 성공" },
+          "403": {
+            "description": "모임 리더가 아닌 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "404": {
+            "description": "모임을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Meeting"],
+        "summary": "모임 삭제",
+        "description": "모임을 삭제합니다. 모임 리더만 삭제할 수 있습니다.",
+        "operationId": "deleteMeeting",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "모임 삭제 성공" },
+          "403": {
+            "description": "모임 리더가 아닌 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "404": {
+            "description": "모임을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "400": {
+            "description": "이미 삭제된 모임인 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meetingId}/participants/{participantId}/reject": {
+      "put": {
+        "tags": ["Meeting"],
+        "summary": "모임 참가 신청 거절",
+        "description": "모임 리더가 참가 신청을 거절합니다.",
+        "operationId": "rejectParticipant",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "description": "모임 ID",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "participantId",
+            "in": "path",
+            "description": "참가 신청 ID",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "모임 리더가 아닌 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "200": {
+            "description": "참가 신청 거절 성공",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ParticipantResponse" } }
+            }
+          },
+          "400": {
+            "description": "이미 승인/거절된 신청인 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "404": {
+            "description": "모임 또는 참가 신청을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meetingId}/participants/{participantId}/approve": {
+      "put": {
+        "tags": ["Meeting"],
+        "summary": "모임 참가 신청 승인",
+        "description": "모임 리더가 참가 신청을 승인합니다.",
+        "operationId": "approveParticipant",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "description": "모임 ID",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "participantId",
+            "in": "path",
+            "description": "참가 신청 ID",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "모임 리더가 아닌 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "200": {
+            "description": "참가 신청 승인 성공",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ParticipantResponse" } }
+            }
+          },
+          "400": {
+            "description": "이미 승인/거절된 신청이거나, 최대 인원 초과",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "404": {
+            "description": "모임 또는 참가 신청을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/uploads": {
+      "post": {
+        "tags": ["파일 업로드 API"],
+        "summary": "파일 업로드",
+        "operationId": "upload",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": ["files"],
+                "type": "object",
+                "properties": {
+                  "files": { "type": "array", "items": { "type": "string", "format": "binary" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "type": "array", "items": { "type": "string" } } } }
+          }
+        }
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "tags": ["지역기반 커뮤니티 API"],
+        "summary": "게시글 목록 조회",
+        "operationId": "getPosts",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "페이지 번호 (0부터 시작)",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "description": "페이지 번호 (0부터 시작)",
+              "format": "int32",
+              "example": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "페이지 크기",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "description": "페이지 크기",
+              "format": "int32",
+              "example": 10
+            },
+            "example": 10
+          },
+          {
+            "name": "searchType",
+            "in": "query",
+            "description": "검색 타입 (TITLE, CONTENT, TITLE_CONTENT)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "검색 타입 (TITLE, CONTENT, TITLE_CONTENT)",
+              "example": "TITLE_CONTENT",
+              "enum": ["TITLE", "CONTENT", "TITLE_CONTENT"]
+            },
+            "example": "TITLE_CONTENT"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "검색 키워드",
+            "required": false,
+            "schema": { "type": "string", "description": "검색 키워드", "example": "맛집" },
+            "example": "맛집"
+          },
+          {
+            "name": "regionCode",
+            "in": "query",
+            "description": "지역 코드",
+            "required": false,
+            "schema": { "type": "string", "description": "지역 코드", "example": "1100110100" },
+            "example": 1100110100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "게시글 목록 조회 성공",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PageResponsePostSummaryDto" } }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["지역기반 커뮤니티 API"],
+        "summary": "게시글 생성",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreatePostRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "게시글 등록 성공",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/CreatePostResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}/like": {
+      "post": {
+        "tags": ["지역기반 커뮤니티 API"],
+        "summary": "게시글 추천",
+        "operationId": "like",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": { "204": { "description": "게시글 추천 성공" } }
+      }
+    },
+    "/api/v1/posts/{postId}/comments": {
+      "get": {
+        "tags": ["댓글 API"],
+        "summary": "댓글 목록 조회",
+        "operationId": "getComments",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CommentWithChildrenDto" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["댓글 API"],
+        "summary": "댓글 작성",
+        "operationId": "writeComment",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CommentRequestDto" } }
+          },
+          "required": true
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/v1/meetings": {
+      "get": {
+        "tags": ["Meeting"],
+        "summary": "모임 목록 조회",
+        "description": "다양한 필터 조건으로 모임 목록을 조회합니다. 인증 여부와 관계없이 조회 가능합니다.",
+        "operationId": "getMeetings",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "페이지 번호 (0부터 시작)",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "description": "페이지 번호 (0부터 시작)",
+              "format": "int32",
+              "example": 0,
+              "default": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "페이지 크기",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "description": "페이지 크기",
+              "format": "int32",
+              "example": 10,
+              "default": 10
+            },
+            "example": 10
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "description": "지역명",
+            "required": false,
+            "schema": { "type": "string", "description": "지역명", "example": "서울" },
+            "example": "서울"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "검색 키워드 (제목, 설명에서 검색)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "검색 키워드 (제목, 설명에서 검색)",
+              "example": "스터디"
+            },
+            "example": "스터디"
+          },
+          {
+            "name": "startDateFrom",
+            "in": "query",
+            "description": "모임 시작일 최소값 (yyyy-MM-dd)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "모임 시작일 최소값 (yyyy-MM-dd)",
+              "format": "date",
+              "example": "2025-06-21"
+            },
+            "example": "2025-06-21"
+          },
+          {
+            "name": "startDateTo",
+            "in": "query",
+            "description": "모임 시작일 최대값 (yyyy-MM-dd)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "모임 시작일 최대값 (yyyy-MM-dd)",
+              "format": "date",
+              "example": "2025-12-31"
+            },
+            "example": "2025-12-31"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "모임 상태",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "모임 상태",
+              "example": "RECRUITING",
+              "enum": ["RECRUITING", "CLOSED", "FINISHED"]
+            },
+            "example": "RECRUITING"
+          },
+          {
+            "name": "distance",
+            "in": "query",
+            "description": "현재 위치 기준 거리 필터링 (km)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "현재 위치 기준 거리 필터링 (km)",
+              "format": "double",
+              "example": 5.0
+            },
+            "example": 5.0
+          },
+          {
+            "name": "latitude",
+            "in": "query",
+            "description": "위도 (거리 필터링 시 필요)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "위도 (거리 필터링 시 필요)",
+              "format": "double",
+              "example": 37.5665
+            },
+            "example": 37.5665
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "description": "경도 (거리 필터링 시 필요)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "경도 (거리 필터링 시 필요)",
+              "format": "double",
+              "example": 126.978
+            },
+            "example": 126.978
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "모임 목록 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PageResponseMeetingSummaryResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Meeting"],
+        "summary": "모임 생성",
+        "description": "새로운 모임을 생성합니다.",
+        "operationId": "createMeeting",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MeetingCreateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": { "201": { "description": "모임 생성 성공" } }
+      }
+    },
+    "/api/v1/meetings/{meetingId}/join": {
+      "post": {
+        "tags": ["Meeting"],
+        "summary": "모임 참가 신청",
+        "description": "특정 모임에 참가 신청합니다. 중복 신청을 방지하고, 신청 시 대기 상태로 등록됩니다.",
+        "operationId": "joinMeeting",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "description": "참가 신청할 모임 ID",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "참가 신청 성공",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/JoinMeetingResponse" } }
+            }
+          },
+          "404": {
+            "description": "모임을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "400": {
+            "description": "이미 신청한 모임이거나, 모집 중이 아닌 모임, 또는 최대 인원 초과",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Meeting"],
+        "summary": "모임 참가 취소",
+        "description": "대기 중이거나 승인된 사용자가 스스로 모임 참여를 취소합니다.",
+        "operationId": "cancelJoin",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "description": "모임 ID",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "참가 취소 성공" },
+          "404": {
+            "description": "모임 또는 참가 정보를 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/signup": {
+      "post": {
+        "tags": ["인증 API"],
+        "summary": "회원가입",
+        "description": "회원 정보를 받아 회원가입을 수행합니다.",
+        "operationId": "signUp",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SignUpRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/SignUpResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": ["인증 API"],
+        "summary": "토큰 재발급",
+        "description": "엑세스, 리프레시 토큰을 받아 토큰을 재발급합니다.",
+        "operationId": "refresh",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "$ref": "#/components/responses/TokensSetCookies" } }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": ["인증 API"],
+        "summary": "로그아웃",
+        "description": "현재 로그인 세션을 종료하고 토큰을 무효화합니다.",
+        "operationId": "logout",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "description": "액세스 토큰",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "description": "리프레시 토큰",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "204": { "description": "로그아웃 성공" } }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["인증 API"],
+        "summary": "로그인",
+        "description": "회원 정보를 받아 로그인을 수행합니다.",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SignInRequest" } }
+          },
+          "required": true
+        },
+        "responses": { "200": { "$ref": "#/components/responses/TokensSetCookies" } }
+      }
+    },
+    "/api/v1/users/me/activities": {
+      "get": {
+        "tags": ["사용자 API"],
+        "operationId": "getMyActivitySummary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ActivitySummaryResponse" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/uploads/{filename}": {
+      "get": {
+        "tags": ["파일 업로드 API"],
+        "summary": "업로드된 파일 조회",
+        "operationId": "serveFile",
+        "parameters": [
+          { "name": "filename", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "*/*": { "schema": { "type": "string", "format": "binary" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/liked": {
+      "get": {
+        "tags": ["지역기반 커뮤니티 API"],
+        "summary": "본인이 추천한 게시글 목록 조회",
+        "operationId": "likedPosts",
+        "responses": {
+          "200": {
+            "description": "본인이 추천한 게시글 목록 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PostSummaryDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/festivals/nearby": {
+      "get": {
+        "tags": ["이벤트"],
+        "summary": "반경 내 이벤트 조회",
+        "description": "위도, 경도, 거리, 기간, 페이징 파라미터로 반경 내 이벤트를 조회합니다.",
+        "operationId": "getNearbyEvents",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "description": "검색 기준 위도",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "검색 기준 위도",
+              "format": "double",
+              "example": 37.5665
+            },
+            "example": 37.5665
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "description": "검색 기준 경도",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "검색 기준 경도",
+              "format": "double",
+              "example": 126.978
+            },
+            "example": 126.978
+          },
+          {
+            "name": "distanceKm",
+            "in": "query",
+            "description": "반경 거리 (단위: km, 최소 0.1)",
+            "required": true,
+            "schema": {
+              "minimum": 0.1,
+              "exclusiveMinimum": false,
+              "type": "number",
+              "description": "반경 거리 (단위: km, 최소 0.1)",
+              "format": "double",
+              "example": 5
+            },
+            "example": 5
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "검색 시작일 (yyyy-MM-dd)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "검색 시작일 (yyyy-MM-dd)",
+              "format": "date",
+              "example": "2025-06-10"
+            },
+            "example": "2025-06-10"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "검색 종료일 (yyyy-MM-dd)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "검색 종료일 (yyyy-MM-dd)",
+              "format": "date",
+              "example": "2025-06-20"
+            },
+            "example": "2025-06-20"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "페이지 번호 (0부터 시작)",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "description": "페이지 번호 (0부터 시작)",
+              "format": "int32",
+              "example": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "페이지 크기 (1~100)",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "description": "페이지 크기 (1~100)",
+              "format": "int32",
+              "example": 20
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PageResponseFestivalResponseDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/rankings": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "유저 랭킹 조회",
+        "operationId": "getRankings",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "default": "all" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UserRankingResponse" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UpdateProfileRequest": {
+        "required": ["nickname"],
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "pattern": "^[가-힣a-zA-Z0-9]{2,20}$",
+            "type": "string",
+            "description": "닉네임",
+            "example": "홍길동"
+          },
+          "profilePictureUrl": { "type": "string", "description": "프로필 이미지 URL" },
+          "selfIntro": { "type": "string", "description": "자기 소개" },
+          "interests": {
+            "type": "array",
+            "description": "관심사",
+            "items": { "type": "string", "description": "관심사" }
+          },
+          "address": { "type": "string", "description": "주소" },
+          "latitude": { "type": "number", "description": "위도" },
+          "longitude": { "type": "number", "description": "경도" }
+        },
+        "description": "프로필 수정 요청"
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "description": "에러 코드", "example": "INVALID_INPUT" },
+          "message": {
+            "type": "string",
+            "description": "에러 메시지",
+            "example": "email: 올바른 이메일 형식이 아닙니다."
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 400
+          },
+          "path": { "type": "string", "description": "요청 경로", "example": "/api/v1/users" },
+          "timestamp": {
+            "type": "string",
+            "description": "에러 발생 시각 (ISO-8601)",
+            "example": "2025-05-07T13:30:20Z"
+          }
+        },
+        "description": "API 에러 응답"
+      },
+      "ChangePasswordRequest": {
+        "required": ["currentPassword", "newPassword"],
+        "type": "object",
+        "properties": {
+          "currentPassword": { "type": "string", "description": "현재 비밀번호" },
+          "newPassword": {
+            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,<.>]).{8,20}$",
+            "type": "string",
+            "description": "새 비밀번호",
+            "example": "P@ssw0rd!"
+          }
+        },
+        "description": "비밀번호 변경 요청"
+      },
+      "UpdatePostRequest": {
+        "required": ["content", "regionCode", "title"],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "게시글 제목",
+            "example": "지금 시간이 남아서"
+          },
+          "content": {
+            "type": "string",
+            "description": "게시글 내용",
+            "example": "같이 드라이브하실 붐! 계신가용"
+          },
+          "regionCode": { "type": "string", "description": "지역 코드", "example": "1100110100" },
+          "imageUrls": { "type": "array", "items": { "type": "string" } }
+        },
+        "description": "게시글 수정 요청"
+      },
+      "CommentUpdateRequestDto": {
+        "required": ["content"],
+        "type": "object",
+        "properties": { "content": { "type": "string" } }
+      },
+      "MeetingUpdateRequest": {
+        "required": ["endTime", "startTime", "status", "title"],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "모임 제목",
+            "example": "함께하는 스프링 스터디"
+          },
+          "description": {
+            "type": "string",
+            "description": "모임 설명",
+            "example": "매주 주말에 만나 스프링 심화 내용을 공부합니다."
+          },
+          "startTime": {
+            "type": "string",
+            "description": "모임 시작 시간",
+            "example": "2025-08-01T10:00:00"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "모임 종료 시간",
+            "example": "2025-08-01T12:00:00"
+          },
+          "maxMembers": {
+            "minimum": 2,
+            "type": "integer",
+            "description": "최대 참여 인원",
+            "format": "int32",
+            "example": 10
+          },
+          "address": {
+            "type": "string",
+            "description": "모임 장소 주소",
+            "example": "서울특별시 강남구 테헤란로 212"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "위도",
+            "format": "double",
+            "example": 37.5017
+          },
+          "longitude": {
+            "type": "number",
+            "description": "경도",
+            "format": "double",
+            "example": 127.0396
+          },
+          "status": {
+            "type": "string",
+            "description": "모임 상태",
+            "example": "CLOSED",
+            "enum": ["RECRUITING", "CLOSED", "FINISHED"]
+          }
+        },
+        "description": "모임 수정 요청"
+      },
+      "ParticipantResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "참여자 ID", "format": "int64", "example": 1 },
+          "userId": {
+            "type": "integer",
+            "description": "사용자 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "nickname": { "type": "string", "description": "참여자 닉네임", "example": "스프링러버" },
+          "profileUrl": {
+            "type": "string",
+            "description": "참여자 프로필 이미지 URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "status": {
+            "type": "string",
+            "description": "참여 상태",
+            "example": "APPROVED",
+            "enum": ["PENDING", "APPROVED", "REJECTED"]
+          }
+        },
+        "description": "모임 참여자 정보"
+      },
+      "CreatePostRequest": {
+        "required": ["content", "regionCode", "title"],
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "description": "게시글 제목", "example": "동네 맛집 추천" },
+          "content": {
+            "type": "string",
+            "description": "게시글 내용",
+            "example": "여기는 정말 맛있어요!"
+          },
+          "regionCode": { "type": "string", "description": "지역 코드", "example": "1100110100" },
+          "imageUrls": {
+            "type": "array",
+            "description": "이미지 URL 리스트",
+            "example": ["/uploads/aaa.png", "/uploads/bbb.jpg"],
+            "items": {
+              "type": "string",
+              "description": "이미지 URL 리스트",
+              "example": "[\"/uploads/aaa.png\",\"/uploads/bbb.jpg\"]"
+            }
+          }
+        },
+        "description": "게시글 생성 요청"
+      },
+      "CreatePostResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "생성된 게시글의 ID",
+            "format": "int64",
+            "example": 123
+          }
+        },
+        "description": "게시글 생성 응답"
+      },
+      "CommentRequestDto": {
+        "required": ["content"],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "댓글 내용",
+            "example": "이 글 정말 좋아요!"
+          },
+          "parentCommentId": {
+            "type": "integer",
+            "description": "부모 댓글 ID (대댓글일 경우에만 사용)",
+            "format": "int64",
+            "example": 1
+          }
+        },
+        "description": "댓글 작성 요청 DTO"
+      },
+      "MeetingCreateRequest": {
+        "required": ["endTime", "startTime", "title"],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "모임 제목",
+            "example": "함께하는 스프링 스터디"
+          },
+          "description": {
+            "type": "string",
+            "description": "모임 설명",
+            "example": "매주 주말에 만나 스프링 심화 내용을 공부합니다."
+          },
+          "startTime": {
+            "type": "string",
+            "description": "모임 시작 시간",
+            "example": "2025-08-01T10:00:00"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "모임 종료 시간",
+            "example": "2025-08-01T12:00:00"
+          },
+          "maxMembers": {
+            "minimum": 2,
+            "type": "integer",
+            "description": "최대 참여 인원",
+            "format": "int32",
+            "example": 10
+          },
+          "address": {
+            "type": "string",
+            "description": "모임 장소 주소",
+            "example": "서울특별시 강남구 테헤란로 212"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "위도",
+            "format": "double",
+            "example": 37.5017
+          },
+          "longitude": {
+            "type": "number",
+            "description": "경도",
+            "format": "double",
+            "example": 127.0396
+          }
+        },
+        "description": "모임 생성 요청"
+      },
+      "JoinMeetingResponse": {
+        "type": "object",
+        "properties": {
+          "participantId": {
+            "type": "integer",
+            "description": "참가 신청 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "meetingId": {
+            "type": "integer",
+            "description": "모임 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "description": "참가 상태",
+            "example": "PENDING",
+            "enum": ["PENDING", "APPROVED", "REJECTED"]
+          },
+          "message": {
+            "type": "string",
+            "description": "메시지",
+            "example": "모임 참가 신청이 완료되었습니다. 승인을 기다려주세요."
+          }
+        },
+        "description": "모임 참가 신청 응답"
+      },
+      "SignUpRequest": {
+        "required": ["email", "nickname", "password"],
+        "type": "object",
+        "properties": {
+          "email": {
+            "pattern": "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,6}$",
+            "type": "string",
+            "description": "이메일",
+            "example": "user@example.com"
+          },
+          "password": {
+            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,<.>]).{8,20}$",
+            "type": "string",
+            "description": "비밀번호",
+            "example": "P@ssw0rd!"
+          },
+          "nickname": {
+            "maxLength": 20,
+            "minLength": 2,
+            "pattern": "^[가-힣a-zA-Z0-9]{2,20}$",
+            "type": "string",
+            "description": "닉네임",
+            "example": "johndoe"
+          }
+        },
+        "description": "회원가입"
+      },
+      "SignUpResponse": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "description": "이메일", "example": "user@example.com" },
+          "nickname": { "type": "string", "description": "닉네임", "example": "johndoe" }
+        },
+        "description": "회원가입 응답"
+      },
+      "SignInRequest": {
+        "required": ["email", "password"],
+        "type": "object",
+        "properties": {
+          "email": {
+            "pattern": "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,6}$",
+            "type": "string",
+            "description": "이메일",
+            "example": "user@example.com"
+          },
+          "password": {
+            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,<.>]).{8,20}$",
+            "type": "string",
+            "description": "비밀번호",
+            "example": "P@ssw0rd!"
+          }
+        },
+        "description": "로그인"
+      },
+      "UserProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "사용자 ID", "format": "int64" },
+          "email": { "type": "string", "description": "이메일" },
+          "nickname": { "type": "string", "description": "닉네임" },
+          "profilePictureUrl": { "type": "string", "description": "프로필 이미지 URL" },
+          "selfIntro": { "type": "string", "description": "자기 소개" },
+          "interests": {
+            "type": "array",
+            "description": "관심사",
+            "items": { "type": "string", "description": "관심사" }
+          },
+          "address": { "type": "string", "description": "주소" },
+          "latitude": { "type": "number", "description": "위도" },
+          "longitude": { "type": "number", "description": "경도" }
+        },
+        "description": "사용자 프로필 응답"
+      },
+      "ActivitySummaryResponse": {
+        "type": "object",
+        "properties": {
+          "activityType": { "type": "string" },
+          "count": { "type": "integer", "format": "int64" }
+        }
+      },
+      "PageResponsePostSummaryDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "description": "조회된 컨텐츠 리스트",
+            "items": { "$ref": "#/components/schemas/PostSummaryDto" }
+          },
+          "page": {
+            "type": "integer",
+            "description": "현재 페이지 번호",
+            "format": "int32",
+            "example": 0
+          },
+          "size": {
+            "type": "integer",
+            "description": "페이지 크기",
+            "format": "int32",
+            "example": 10
+          },
+          "totalElements": {
+            "type": "integer",
+            "description": "전체 요소 개수",
+            "format": "int64",
+            "example": 123
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "전체 페이지 수",
+            "format": "int32",
+            "example": 13
+          }
+        },
+        "description": "페이지네이션된 응답 모델"
+      },
+      "PostSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "게시글 ID", "format": "int64", "example": 1 },
+          "title": { "type": "string", "description": "게시글 제목", "example": "맛집 게시글 0" },
+          "authorNickname": { "type": "string", "description": "작성자 닉네임", "example": "foo" },
+          "regionCode": { "type": "string", "description": "지역 코드", "example": "1100110100" },
+          "likeCount": {
+            "type": "integer",
+            "description": "추천 수",
+            "format": "int32",
+            "example": 10
+          },
+          "createdAt": { "type": "string", "description": "생성일시", "format": "date-time" }
+        },
+        "description": "게시글 요약 정보 응답"
+      },
+      "PostDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "게시글 ID", "format": "int64", "example": 1 },
+          "title": { "type": "string", "description": "게시글 제목", "example": "맛집 게시글 0" },
+          "content": {
+            "type": "string",
+            "description": "게시글 내용",
+            "example": "이곳은 테스트 본문입니다."
+          },
+          "authorNickname": { "type": "string", "description": "작성자 닉네임", "example": "foo" },
+          "authorProfileUrl": {
+            "type": "string",
+            "description": "작성자 프로필 이미지 URL",
+            "example": "https://cdn.example.com/profile.jpg"
+          },
+          "regionCode": { "type": "string", "description": "지역 코드", "example": "1100110100" },
+          "likeCount": {
+            "type": "integer",
+            "description": "추천 수",
+            "format": "int32",
+            "example": 10
+          },
+          "commentCount": {
+            "type": "integer",
+            "description": "댓글 수",
+            "format": "int32",
+            "example": 6
+          },
+          "images": {
+            "type": "array",
+            "description": "게시글에 포함된 이미지 리스트 (정렬 순서 오름차순)",
+            "items": { "$ref": "#/components/schemas/PostImageDto" }
+          },
+          "createdAt": { "type": "string", "description": "생성일시", "format": "date-time" },
+          "updatedAt": { "type": "string", "description": "수정일시", "format": "date-time" }
+        },
+        "description": "게시글 상세 정보 응답"
+      },
+      "PostImageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "이미지 엔티티 ID",
+            "format": "int64",
+            "example": 100
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "이미지 URL",
+            "example": "https://cdn.example.com/image.jpg"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "description": "이미지 정렬 순서",
+            "format": "int32",
+            "example": 1
+          }
+        },
+        "description": "게시글 이미지 정보"
+      },
+      "CommentChildDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "대댓글 ID", "format": "int64", "example": 1 },
+          "content": {
+            "type": "string",
+            "description": "대댓글 내용",
+            "example": "이 글 정말 좋아요!"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "대댓글 작성자 닉네임",
+            "example": "개구리왕눈이"
+          },
+          "deleted": { "type": "boolean", "description": "대댓글 삭제여부", "example": false },
+          "createdAt": { "type": "string", "description": "대댓글 작성일", "format": "date-time" }
+        },
+        "description": "대댓글 응답"
+      },
+      "CommentWithChildrenDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "댓글 ID", "format": "int64", "example": 1 },
+          "content": {
+            "type": "string",
+            "description": "댓글 내용",
+            "example": "이 글 정말 좋아요!"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "댓글 작성자 닉네임",
+            "example": "개구리왕눈이"
+          },
+          "deleted": { "type": "boolean", "description": "댓글 삭제여부", "example": false },
+          "createdAt": { "type": "string", "description": "댓글 작성일", "format": "date-time" },
+          "children": {
+            "type": "array",
+            "description": "대댓글 목록",
+            "items": { "$ref": "#/components/schemas/CommentChildDto" }
+          }
+        },
+        "description": "댓글 목록"
+      },
+      "MeetingSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "모임 ID", "format": "int64", "example": 1 },
+          "title": {
+            "type": "string",
+            "description": "모임 제목",
+            "example": "함께하는 스프링 스터디"
+          },
+          "description": {
+            "type": "string",
+            "description": "모임 설명 요약",
+            "example": "매주 주말에 만나 스프링 심화 내용을 공부합니다."
+          },
+          "startTime": { "type": "string", "description": "모임 시작 시간", "format": "date-time" },
+          "endTime": { "type": "string", "description": "모임 종료 시간", "format": "date-time" },
+          "maxMembers": {
+            "type": "integer",
+            "description": "최대 참여 인원",
+            "format": "int32",
+            "example": 10
+          },
+          "currentMembers": {
+            "type": "integer",
+            "description": "현재 참여 인원",
+            "format": "int32",
+            "example": 5
+          },
+          "address": {
+            "type": "string",
+            "description": "모임 장소 주소",
+            "example": "서울특별시 강남구 테헤란로 212"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "위도",
+            "format": "double",
+            "example": 37.5017
+          },
+          "longitude": {
+            "type": "number",
+            "description": "경도",
+            "format": "double",
+            "example": 127.0396
+          },
+          "status": {
+            "type": "string",
+            "description": "모임 상태",
+            "example": "RECRUITING",
+            "enum": ["RECRUITING", "CLOSED", "FINISHED"]
+          },
+          "leaderId": {
+            "type": "integer",
+            "description": "모임장 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "leaderNickname": {
+            "type": "string",
+            "description": "모임장 닉네임",
+            "example": "스프링마스터"
+          },
+          "distance": {
+            "type": "number",
+            "description": "거리 (km, 위치 기반 검색 시에만 값이 있음)",
+            "format": "double",
+            "example": 3.2
+          }
+        },
+        "description": "모임 목록 조회 응답 아이템"
+      },
+      "PageResponseMeetingSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "description": "조회된 컨텐츠 리스트",
+            "items": { "$ref": "#/components/schemas/MeetingSummaryResponse" }
+          },
+          "page": {
+            "type": "integer",
+            "description": "현재 페이지 번호",
+            "format": "int32",
+            "example": 0
+          },
+          "size": {
+            "type": "integer",
+            "description": "페이지 크기",
+            "format": "int32",
+            "example": 10
+          },
+          "totalElements": {
+            "type": "integer",
+            "description": "전체 요소 개수",
+            "format": "int64",
+            "example": 123
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "전체 페이지 수",
+            "format": "int32",
+            "example": 13
+          }
+        },
+        "description": "페이지네이션된 응답 모델"
+      },
+      "MeetingDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "모임 ID", "format": "int64", "example": 1 },
+          "title": {
+            "type": "string",
+            "description": "모임 제목",
+            "example": "함께하는 스프링 스터디"
+          },
+          "description": {
+            "type": "string",
+            "description": "모임 설명",
+            "example": "매주 주말에 만나 스프링 심화 내용을 공부합니다."
+          },
+          "startTime": { "type": "string", "description": "모임 시작 시간", "format": "date-time" },
+          "endTime": { "type": "string", "description": "모임 종료 시간", "format": "date-time" },
+          "maxMembers": {
+            "type": "integer",
+            "description": "최대 참여 인원",
+            "format": "int32",
+            "example": 10
+          },
+          "currentMembers": {
+            "type": "integer",
+            "description": "현재 참여 인원",
+            "format": "int32",
+            "example": 5
+          },
+          "address": {
+            "type": "string",
+            "description": "모임 장소 주소",
+            "example": "서울특별시 강남구 테헤란로 212"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "위도",
+            "format": "double",
+            "example": 37.5017
+          },
+          "longitude": {
+            "type": "number",
+            "description": "경도",
+            "format": "double",
+            "example": 127.0396
+          },
+          "status": {
+            "type": "string",
+            "description": "모임 상태",
+            "example": "RECRUITING",
+            "enum": ["RECRUITING", "CLOSED", "FINISHED"]
+          },
+          "leaderId": {
+            "type": "integer",
+            "description": "모임장 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "leaderNickname": {
+            "type": "string",
+            "description": "모임장 닉네임",
+            "example": "스프링마스터"
+          },
+          "leaderProfileUrl": {
+            "type": "string",
+            "description": "모임장 프로필 이미지 URL",
+            "example": "https://example.com/profile.jpg"
+          },
+          "participants": {
+            "type": "array",
+            "description": "참여자 목록",
+            "items": { "$ref": "#/components/schemas/ParticipantResponse" }
+          }
+        },
+        "description": "모임 상세 정보 응답"
+      },
+      "FestivalResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "title": { "type": "string" },
+          "place": { "type": "string" },
+          "startTime": { "type": "string", "format": "date-time" },
+          "endTime": { "type": "string", "format": "date-time" },
+          "category": { "type": "string" },
+          "isFree": { "type": "boolean" },
+          "homepageUrl": { "type": "string" },
+          "distance": { "type": "number", "format": "double" }
+        },
+        "description": "조회된 컨텐츠 리스트"
+      },
+      "PageResponseFestivalResponseDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "description": "조회된 컨텐츠 리스트",
+            "items": { "$ref": "#/components/schemas/FestivalResponseDto" }
+          },
+          "page": {
+            "type": "integer",
+            "description": "현재 페이지 번호",
+            "format": "int32",
+            "example": 0
+          },
+          "size": {
+            "type": "integer",
+            "description": "페이지 크기",
+            "format": "int32",
+            "example": 10
+          },
+          "totalElements": {
+            "type": "integer",
+            "description": "전체 요소 개수",
+            "format": "int64",
+            "example": 123
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "전체 페이지 수",
+            "format": "int32",
+            "example": 13
+          }
+        },
+        "description": "페이지네이션된 응답 모델"
+      },
+      "UserRankingResponse": {
+        "type": "object",
+        "properties": {
+          "nickname": { "type": "string", "description": "닉네임" },
+          "totalPoints": { "type": "integer", "description": "총 획득 포인트", "format": "int32" },
+          "lastActivityAt": {
+            "type": "string",
+            "description": "마지막 활동 시각",
+            "format": "date-time"
+          }
+        },
+        "description": "유저 랭킹 응답"
+      }
+    },
+    "responses": {
+      "TokensSetCookies": {
+        "description": "로그인/토큰 재발급 성공 시 `access_token`, `refresh_token` 쿠키 설정",
+        "headers": {
+          "Set-Cookie": {
+            "description": "refresh_token=...; HttpOnly; Path=/; SameSite=Strict",
+            "schema": {
+              "type": "string",
+              "default": "refresh_token=abc...; HttpOnly; Path=/; SameSite=Strict"
+            }
+          }
+        }
+      }
+    }
+  }
+}
