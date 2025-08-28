@@ -23,7 +23,7 @@ npm run build && npm run start -p 3000
 ## ⚙️ 환경 변수
 
 ```
-NEXT_PUBLIC_API_BASE_URL=/api
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 OPENAPI_URL=http://localhost:8080/v3/api-docs
 ```
 
