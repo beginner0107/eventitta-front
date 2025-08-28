@@ -4,13 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useRouter } from 'next/navigation';
 import { useGetMyProfile, useLogout, useRefresh } from '@/api/eventitta';
 import type { UserProfileResponse } from '@/api/eventitta';
-import { debugCookies, getCookieValue } from '@/lib/cookie-debug';
-import {
-  saveAuthToStorage,
-  loadAuthFromStorage,
-  clearAuthStorage,
-  hasValidCookies,
-} from '@/lib/auth-storage';
+import { getCookieValue } from '@/lib/cookie-debug';
+import { saveAuthToStorage, loadAuthFromStorage, clearAuthStorage } from '@/lib/auth-storage';
 
 interface AuthContextType {
   user: UserProfileResponse | null;
@@ -19,7 +14,6 @@ interface AuthContextType {
   login: (user: UserProfileResponse) => void;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  manualAuthCheck: () => void; // 개발용 디버깅
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,12 +36,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
 
-  // 쿠키 디버깅을 위한 수동 체크 함수 추가 (개발용)
-  const manualAuthCheck = () => {
-    debugCookies();
-    setAuthChecked(false); // 이렇게 하면 useEffect가 다시 실행됨
-  };
-
   // 사용자 프로필 조회 쿼리
   const profileQuery = useGetMyProfile({
     query: {
@@ -60,7 +48,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logoutMutation = useLogout({
     mutation: {
       onSuccess: () => {
-        console.log('AuthContext: Logout successful');
         setUser(null);
         setAuthChecked(true);
         clearAuthStorage();
@@ -81,17 +68,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshMutation = useRefresh({
     mutation: {
       onSuccess: async () => {
-        console.log('AuthContext: Token refresh successful, fetching profile...');
         try {
           const result = await profileQuery.refetch();
           if (result.data?.data) {
-            console.log(
-              'AuthContext: Profile fetch after refresh successful:',
-              result.data.data.nickname,
-            );
             setUser(result.data.data);
           } else {
-            console.log('AuthContext: Profile fetch after refresh failed');
             setUser(null);
           }
         } catch (error) {
@@ -118,36 +99,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let isMounted = true;
 
     const checkAuth = async () => {
-      console.log('🔥 AuthContext: Starting authentication check...');
-
       // Client-side only
       if (typeof window === 'undefined') {
-        console.log('🔥 AuthContext: Server-side, skipping');
         return;
       }
 
       if (authChecked) {
-        console.log('🔥 AuthContext: Already checked, skipping');
         return;
       }
 
       try {
         setIsLoading(true);
-        debugCookies();
 
         const accessToken = getCookieValue('access_token');
         const refreshToken = getCookieValue('refresh_token');
 
-        console.log('🔥 AuthContext: Tokens - access:', !!accessToken, 'refresh:', !!refreshToken);
-
         // No tokens = try localStorage fallback (development only)
         if (!accessToken && !refreshToken) {
-          console.log('🔥 AuthContext: No tokens found in cookies');
-
           // Try localStorage fallback for development
           const storedUser = loadAuthFromStorage();
           if (storedUser) {
-            console.log('🔧 AuthContext: Using localStorage fallback for development');
             if (isMounted) {
               setUser(storedUser);
               setIsLoading(false);
@@ -156,7 +127,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             return;
           }
 
-          console.log('🔥 AuthContext: No fallback available, setting unauthenticated');
           if (isMounted) {
             setUser(null);
             setIsLoading(false);
@@ -167,37 +137,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Try to fetch profile with access token
         if (accessToken) {
-          console.log('🔥 AuthContext: Fetching profile with access token...');
           try {
             const result = await profileQuery.refetch();
             if (isMounted && result.data?.data) {
-              console.log('🔥 AuthContext: Profile success:', result.data.data.nickname);
               setUser(result.data.data);
               setIsLoading(false);
               setAuthChecked(true);
               return;
             }
           } catch (error) {
-            console.log('🔥 AuthContext: Profile fetch failed:', error);
+            console.error('Profile fetch failed:', error);
           }
         }
 
         // If access token failed but we have refresh token, try refresh
         if (refreshToken) {
-          console.log('🔥 AuthContext: Trying token refresh...');
           refreshMutation.mutate();
           return;
         }
 
         // No valid tokens
-        console.log('🔥 AuthContext: No valid tokens');
         if (isMounted) {
           setUser(null);
           setIsLoading(false);
           setAuthChecked(true);
         }
       } catch (error) {
-        console.error('🔥 AuthContext: Check failed:', error);
+        console.error('Auth check failed:', error);
         if (isMounted) {
           setUser(null);
           setIsLoading(false);
@@ -214,7 +180,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [authChecked, profileQuery, refreshMutation]); // Include required dependencies
 
   const login = (userData: UserProfileResponse) => {
-    console.log('AuthContext: Manual login called for:', userData.nickname);
     setUser(userData);
     setAuthChecked(true);
     setIsLoading(false);
@@ -225,7 +190,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      console.log('AuthContext: Logout initiated');
       await logoutMutation.mutateAsync();
     } catch (error) {
       console.error('Logout failed:', error);
@@ -239,7 +203,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refresh = async () => {
     try {
-      console.log('AuthContext: Manual refresh initiated');
       await refreshMutation.mutateAsync();
     } catch (error) {
       console.error('Token refresh failed:', error);
@@ -256,7 +219,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     refresh,
-    manualAuthCheck,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

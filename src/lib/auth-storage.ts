@@ -21,7 +21,6 @@ export function saveAuthToStorage(user: any) {
 
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
-    console.log('🔧 Dev: Saved auth to localStorage as fallback');
   } catch (error) {
     console.warn('Failed to save auth to localStorage:', error);
   }
@@ -39,11 +38,9 @@ export function loadAuthFromStorage(): any | null {
     // Check if expired
     if (Date.now() > authData.expiresAt) {
       localStorage.removeItem(AUTH_STORAGE_KEY);
-      console.log('🔧 Dev: Auth storage expired, removing');
       return null;
     }
 
-    console.log('🔧 Dev: Loaded auth from localStorage fallback');
     return authData.user;
   } catch (error) {
     console.warn('Failed to load auth from localStorage:', error);
@@ -57,7 +54,6 @@ export function clearAuthStorage() {
 
   try {
     localStorage.removeItem(AUTH_STORAGE_KEY);
-    console.log('🔧 Dev: Cleared auth storage');
   } catch (error) {
     console.warn('Failed to clear auth storage:', error);
   }

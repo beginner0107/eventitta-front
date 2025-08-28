@@ -38,13 +38,6 @@ export function Header() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
 
-  console.log('Header: Auth state -', {
-    user: user?.nickname || null,
-    isAuthenticated,
-    isLoading,
-    pathname,
-  });
-
   const handleLogout = async () => {
     try {
       await logout();

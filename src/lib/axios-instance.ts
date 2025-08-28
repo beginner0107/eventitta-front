@@ -9,17 +9,10 @@ const instance = axios.create({
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log('Axios interceptor: Response error:', {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.message,
-    });
-
     // If we get 401 and it's not a login or refresh endpoint, the token is expired
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
       if (!url.includes('/auth/login') && !url.includes('/auth/refresh')) {
-        console.log('Axios interceptor: 401 on protected endpoint, token likely expired');
         // The server should have cleared the cookies if tokens are invalid
         // We'll let the AuthContext handle the state update on next check
       }

@@ -1,8 +1,6 @@
+// 개발용 쿠키 디버깅 함수 (현재 사용되지 않음)
 export function debugCookies() {
-  if (typeof document === 'undefined') {
-    console.log('Cookie debug: Running on server, no cookies available');
-    return;
-  }
+  if (typeof document === 'undefined') return;
 
   console.log('=== COOKIE DEBUG ===');
   console.log('Raw document.cookie:', document.cookie);
