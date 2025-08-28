@@ -7,7 +7,8 @@ import { PostFilters } from './PostFilters';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MessageSquare, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { MessageSquare, ChevronLeft, ChevronRight, AlertCircle, Plus } from 'lucide-react';
+import Link from 'next/link';
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -56,8 +57,17 @@ export function PostList() {
   return (
     <div className="container max-w-6xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">지역 커뮤니티</h1>
-        <p className="text-muted-foreground">동네 이웃들과 소통하고 정보를 나누는 공간입니다</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">지역 커뮤니티</h1>
+            <p className="text-muted-foreground">동네 이웃들과 소통하고 정보를 나누는 공간입니다</p>
+          </div>
+          <Link href="/community/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />글 작성하기
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <PostFilters onFiltersChange={handleFiltersChange} loading={isLoading} />
@@ -82,7 +92,9 @@ export function PostList() {
           <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">게시글이 없습니다</h3>
           <p className="text-muted-foreground mb-4">첫 번째 게시글을 작성해보세요!</p>
-          <Button>글 작성하기</Button>
+          <Link href="/community/create">
+            <Button>글 작성하기</Button>
+          </Link>
         </div>
       ) : (
         <>

@@ -97,11 +97,45 @@ Uses the following generated API hooks from `src/api/eventitta.ts`:
 - `textarea.tsx`: Multi-line text input component
 - Enhanced `avatar.tsx` integration for user profiles
 
-## Next Steps (Phase 3+)
+## Phase 3 Implemented (Post Creation & Editing)
 
-- Post creation form (`/community/create/page.tsx`)
-- Post editing and deletion for authors
+✅ **Post Creation Page**: `/community/create/page.tsx` with comprehensive form
+✅ **Post Creation Logic**: Full integration with `useCreate` API hook
+✅ **Image Upload Support**: URL-based image management with preview
+✅ **Post Editing**: Complete edit functionality at `/community/[postId]/edit`
+✅ **Form Validation**: Client-side validation with error handling
+✅ **User Experience**: Loading states, character counts, responsive design
+
+### Additional Components Added
+
+#### PostCreateForm.tsx
+
+- Complete post creation form with validation
+- Image URL management (add/remove functionality)
+- Character counters for title and content
+- Real-time validation feedback
+- Success/error handling with redirects
+
+#### PostEditForm.tsx
+
+- Pre-populated editing form from existing post data
+- Same validation and UX patterns as creation
+- Loading states while fetching post data
+- Error handling for missing/unauthorized posts
+
+#### Navigation Enhancements
+
+- "글 작성하기" buttons throughout the UI
+- Edit/Delete buttons in post detail view
+- Proper navigation breadcrumbs
+- Responsive button placement
+
+## Next Steps (Phase 4+)
+
+- Post deletion functionality with confirmation dialogs
 - Reply API integration for nested comments
 - User authentication checks for edit/delete permissions
-- Image upload functionality
+- File upload instead of URL-based images
 - Like/unlike post functionality
+- Draft saving for posts
+- Rich text editor integration

@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageSquare, MapPin, Calendar, User } from 'lucide-react';
+import { Heart, MessageSquare, MapPin, Calendar, User, Edit, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 // Simple date formatter helper (reused from PostCard)
 function formatTimeAgo(dateString: string): string {
@@ -133,15 +134,31 @@ export function PostDetailContent({ post }: PostDetailContentProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center space-x-2 mt-6 pt-4 border-t">
-          <Button variant="outline" size="sm">
-            <Heart className="h-4 w-4 mr-2" />
-            좋아요 {post.likeCount || 0}
-          </Button>
-          <Button variant="outline" size="sm">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            댓글 {post.commentCount || 0}
-          </Button>
+        <div className="flex items-center justify-between mt-6 pt-4 border-t">
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm">
+              <Heart className="h-4 w-4 mr-2" />
+              좋아요 {post.likeCount || 0}
+            </Button>
+            <Button variant="outline" size="sm">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              댓글 {post.commentCount || 0}
+            </Button>
+          </div>
+
+          {/* Edit/Delete Buttons - Show for post authors */}
+          <div className="flex items-center space-x-2">
+            <Link href={`/community/${post.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                수정
+              </Button>
+            </Link>
+            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              삭제
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
