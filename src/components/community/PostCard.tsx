@@ -3,6 +3,7 @@
 import { PostSummaryDto } from '@/api/eventitta';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Heart, MessageSquare, User, MapPin, Calendar } from 'lucide-react';
 import Link from 'next/link';
 // Simple date formatter helper
@@ -35,7 +36,7 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <Link href={`/community/${post.id}`}>
-      <Card className="hover:shadow-md transition-shadow duration-200 cursor-pointer h-full">
+      <Card className="hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full group">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start">
             <CardTitle className="text-lg font-semibold line-clamp-2 flex-1 mr-2">
@@ -54,7 +55,11 @@ export function PostCard({ post }: PostCardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <div className="flex items-center">
-                <User className="h-4 w-4 mr-1" />
+                <Avatar className="h-4 w-4 mr-1">
+                  <AvatarFallback className="text-xs">
+                    {post.authorNickname ? post.authorNickname[0].toUpperCase() : 'U'}
+                  </AvatarFallback>
+                </Avatar>
                 <span>{post.authorNickname || '익명'}</span>
               </div>
 

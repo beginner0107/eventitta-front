@@ -3,43 +3,59 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+interface DropdownContextType {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+const DropdownContext = React.createContext<DropdownContextType | null>(null);
+
+const useDropdown = () => {
+  const context = React.useContext(DropdownContext);
+  if (!context) {
+    throw new Error('Dropdown components must be used within DropdownMenu');
+  }
+  return context;
+};
+
 // Simple dropdown menu implementation
 const DropdownMenu = ({ children }: { children: React.ReactNode }) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   return (
-    <div
-      className="relative"
-      onBlur={(e) => {
-        // Close when clicking outside
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsOpen(false);
-        }
-      }}
-    >
-      {React.Children.map(children, (child) =>
-        React.isValidElement(child)
-          ? React.cloneElement(child, { isOpen, setIsOpen } as any)
-          : child,
-      )}
-    </div>
+    <DropdownContext.Provider value={{ isOpen, setIsOpen }}>
+      <div className="relative" ref={dropdownRef}>
+        {children}
+      </div>
+    </DropdownContext.Provider>
   );
 };
 
-interface DropdownMenuTriggerProps extends React.HTMLAttributes<HTMLElement> {
+interface DropdownMenuTriggerProps extends React.HTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   children: React.ReactNode;
-  isOpen?: boolean;
-  setIsOpen?: (open: boolean) => void;
 }
 
-const DropdownMenuTrigger = ({
-  children,
-  asChild = false,
-  isOpen = false,
-  setIsOpen = () => {},
-  ...props
-}: DropdownMenuTriggerProps) => {
+const DropdownMenuTrigger = ({ children, asChild = false, ...props }: DropdownMenuTriggerProps) => {
+  const { isOpen, setIsOpen } = useDropdown();
   const handleClick = () => setIsOpen(!isOpen);
 
   if (asChild && React.isValidElement(children)) {
@@ -59,8 +75,6 @@ const DropdownMenuTrigger = ({
 interface DropdownMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {
   align?: 'start' | 'end';
   forceMount?: boolean;
-  isOpen?: boolean;
-  setIsOpen?: (open: boolean) => void;
 }
 
 const DropdownMenuContent = ({
@@ -68,10 +82,10 @@ const DropdownMenuContent = ({
   className,
   align = 'start',
   forceMount = false,
-  isOpen = false,
-  setIsOpen = () => {},
   ...props
 }: DropdownMenuContentProps) => {
+  const { isOpen } = useDropdown();
+
   if (!isOpen && !forceMount) return null;
 
   return (
@@ -97,24 +111,47 @@ const DropdownMenuItem = ({
   className,
   children,
   asChild = false,
+  onClick,
   ...props
 }: DropdownMenuItemProps) => {
+  const { setIsOpen } = useDropdown();
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsOpen(false); // Close dropdown when item is clicked
+    onClick?.(e);
+  };
+
   if (asChild && React.isValidElement(children)) {
+    // For Next.js Link components, we need to close dropdown immediately
+    // before navigation happens
+    const handleAsChildClick = (e: React.MouseEvent<HTMLElement>) => {
+      // Close dropdown first
+      setIsOpen(false);
+      // Then allow the original click to proceed
+      const childProps = children.props as any;
+      if (childProps.onClick) {
+        childProps.onClick(e);
+      }
+    };
+
+    const childProps = children.props as any;
     return React.cloneElement(children, {
       className: cn(
         'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
         className,
+        childProps.className,
       ),
-      ...props,
+      onClick: handleAsChildClick,
     } as any);
   }
 
   return (
     <div
       className={cn(
-        'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
+        'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
         className,
       )}
+      onClick={handleClick}
       {...props}
     >
       {children}
@@ -126,15 +163,17 @@ const DropdownMenuLabel = ({
   className,
   children,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('px-2 py-1.5 text-sm font-semibold', className)} {...props}>
-    {children}
-  </div>
-);
+}: React.HTMLAttributes<HTMLDivElement>) => {
+  return (
+    <div className={cn('px-2 py-1.5 text-sm font-semibold', className)} {...props}>
+      {children}
+    </div>
+  );
+};
 
-const DropdownMenuSeparator = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('-mx-1 my-1 h-px bg-muted', className)} {...props} />
-);
+const DropdownMenuSeparator = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  return <div className={cn('-mx-1 my-1 h-px bg-muted', className)} {...props} />;
+};
 
 export {
   DropdownMenu,

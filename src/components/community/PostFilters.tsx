@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 // Using native select for now
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, MapPin } from 'lucide-react';
 import { GetPostsParams, GetPostsSearchType } from '@/api/eventitta';
 
 interface PostFiltersProps {
@@ -12,10 +12,23 @@ interface PostFiltersProps {
   loading?: boolean;
 }
 
+// Common Korean regions for quick selection
+const POPULAR_REGIONS = [
+  '서울시 강남구',
+  '서울시 서초구',
+  '서울시 송파구',
+  '서울시 마포구',
+  '부산시 해운대구',
+  '부산시 부산진구',
+  '인천시 연수구',
+  '대구시 수성구',
+];
+
 export function PostFilters({ onFiltersChange, loading }: PostFiltersProps) {
   const [keyword, setKeyword] = useState('');
   const [searchType, setSearchType] = useState<GetPostsSearchType>('TITLE_CONTENT');
   const [regionCode, setRegionCode] = useState<string>('');
+  const [showRegionSuggestions, setShowRegionSuggestions] = useState(false);
 
   const handleSearch = () => {
     onFiltersChange({
@@ -62,13 +75,52 @@ export function PostFilters({ onFiltersChange, loading }: PostFiltersProps) {
           <option value="CONTENT">내용</option>
         </select>
 
-        <Input
-          type="text"
-          placeholder="지역 (예: 서울시 강남구)"
-          value={regionCode}
-          onChange={(e) => setRegionCode(e.target.value)}
-          className="w-full md:w-48"
-        />
+        <div className="relative w-full md:w-48">
+          <Input
+            type="text"
+            placeholder="지역 (예: 서울시 강남구)"
+            value={regionCode}
+            onChange={(e) => {
+              setRegionCode(e.target.value);
+              setShowRegionSuggestions(e.target.value.length > 0);
+            }}
+            onFocus={() => setShowRegionSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowRegionSuggestions(false), 200)}
+            className="pr-8"
+          />
+          <MapPin className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
+          {/* Region Suggestions Dropdown */}
+          {showRegionSuggestions && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
+              {POPULAR_REGIONS.filter(
+                (region) =>
+                  regionCode.length === 0 ||
+                  region.toLowerCase().includes(regionCode.toLowerCase()),
+              ).map((region) => (
+                <button
+                  key={region}
+                  type="button"
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                  onClick={() => {
+                    setRegionCode(region);
+                    setShowRegionSuggestions(false);
+                  }}
+                >
+                  {region}
+                </button>
+              ))}
+              {regionCode.length > 0 &&
+                !POPULAR_REGIONS.some((r) =>
+                  r.toLowerCase().includes(regionCode.toLowerCase()),
+                ) && (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    &apos;{regionCode}&apos; 검색 결과가 없습니다.
+                  </div>
+                )}
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-2">
           <Button onClick={handleSearch} disabled={loading} className="whitespace-nowrap">
