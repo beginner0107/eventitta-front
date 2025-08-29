@@ -34,6 +34,10 @@ export function RegionSelector({
   placeholder = '지역을 선택하세요',
   disabled = false,
 }: RegionSelectorProps) {
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
   const [selectedL1, setSelectedL1] = useState<string>('');
   const [selectedL2, setSelectedL2] = useState<string>('');
   const [selectedL3, setSelectedL3] = useState<string>('');
@@ -112,7 +116,8 @@ export function RegionSelector({
     const level = getRegionLevel(value);
     if (level >= 1 && topRegions?.data) {
       const l1FromPath = initialPath?.[0];
-      const l1Code = l1FromPath || (level === 1 ? value : value.substring(0, 2) + '00000000');
+      // For explicit level-1 values selected by user, always use value; otherwise fallback to path or derive
+      const l1Code = level === 1 ? value : l1FromPath || value.substring(0, 2) + '00000000';
 
       // Only set if L1 region exists in options
       if (hasRegion(topRegions.data, l1Code)) {
@@ -123,11 +128,11 @@ export function RegionSelector({
           appliedOnceRef.current = value;
           // Propagate initial selection name once
           const name = getRegionName(l1Code, topRegions.data);
-          onChange(toCode(l1Code), name);
+          onChangeRef.current(toCode(l1Code), name);
         }
       }
     }
-  }, [value, topRegions, initialPath, onChange]);
+  }, [value, topRegions, initialPath]);
 
   // Step 2: Set L2 when L1 is set and L2 regions are loaded
   useEffect(() => {
@@ -138,7 +143,8 @@ export function RegionSelector({
     const level = getRegionLevel(value);
     if (level >= 2 && selectedL1 && l2Regions?.data) {
       const l2FromPath = initialPath?.[1];
-      const l2Code = l2FromPath || (level === 2 ? value : value.substring(0, 5) + '00000');
+      // For explicit level-2 values selected by user, always use value; otherwise fallback to path or derive
+      const l2Code = level === 2 ? value : l2FromPath || value.substring(0, 5) + '00000';
 
       // Only set if L2 region exists in options
       if (hasRegion(l2Regions.data, l2Code)) {
@@ -148,11 +154,11 @@ export function RegionSelector({
           appliedOnceRef.current = value;
           // Propagate initial selection name once
           const name = getRegionName(l2Code, l2Regions.data);
-          onChange(toCode(l2Code), name);
+          onChangeRef.current(toCode(l2Code), name);
         }
       }
     }
-  }, [value, selectedL1, l2Regions, initialPath, onChange]);
+  }, [value, selectedL1, l2Regions, initialPath]);
 
   // Step 3: Set L3 when L2 is set and L3 regions are loaded
   useEffect(() => {
@@ -172,21 +178,22 @@ export function RegionSelector({
         appliedOnceRef.current = value;
         // Propagate initial selection name once
         const name = getRegionName(l3FromPath, l3Regions.data);
-        onChange(toCode(l3FromPath), name);
+        onChangeRef.current(toCode(l3FromPath), name);
       }
     }
-  }, [value, selectedL2, l3Regions, initialPath, selectedL3, onChange]);
+  }, [value, selectedL2, l3Regions, initialPath, selectedL3]);
 
   const handleL1Change = (code: string) => {
     const next = toCode(code);
     setSelectedL1(next);
     setSelectedL2('');
     setSelectedL3('');
+    setInitialPath(null);
     appliedOnceRef.current = ''; // Reset to allow new selection
 
     if (topRegions?.data) {
       const regionName = getRegionName(next, topRegions.data);
-      onChange(next, regionName);
+      onChangeRef.current(next, regionName);
     }
   };
 
@@ -194,11 +201,12 @@ export function RegionSelector({
     const next = toCode(code);
     setSelectedL2(next);
     setSelectedL3('');
+    setInitialPath(null);
     appliedOnceRef.current = ''; // Reset to allow new selection
 
     if (l2Regions?.data) {
       const regionName = getRegionName(next, l2Regions.data);
-      onChange(next, regionName);
+      onChangeRef.current(next, regionName);
     }
   };
 
@@ -209,7 +217,7 @@ export function RegionSelector({
 
     if (l3Regions?.data) {
       const regionName = getRegionName(next, l3Regions.data);
-      onChange(next, regionName);
+      onChangeRef.current(next, regionName);
     }
   };
 
