@@ -55,7 +55,9 @@ export function RegionSelector({
   // Holds the target parent path derived from region options (l1 -> l2 -> l3)
   const [initialPath, setInitialPath] = useState<string[] | null>(null);
 
-  const appliedOnceRef = useRef<string>(''); // Track which code we've applied
+  // Track last value we emitted to parent and hydration state
+  const lastEmittedValueRef = useRef<string>('');
+  const didHydrateRef = useRef<boolean>(false);
 
   // String normalization and safe existence checks
   const toCode = (v: unknown) => (v == null ? '' : String(v).trim());
@@ -100,10 +102,12 @@ export function RegionSelector({
     setInitialPath(parts.length ? parts : null);
   }, [value, regionOptions]);
 
-  // Reset applied flag if value changes to different code
+  // Detect external value changes (not caused by our own onChange)
   useEffect(() => {
-    if (value && value !== appliedOnceRef.current) {
-      appliedOnceRef.current = '';
+    if (!value) return;
+    if (value !== lastEmittedValueRef.current) {
+      // Incoming value from outside: allow hydration from initialPath
+      didHydrateRef.current = false;
     }
   }, [value]);
 
@@ -112,6 +116,8 @@ export function RegionSelector({
     if (!value || !isLikelyRegionCode(value)) {
       return;
     }
+
+    if (didHydrateRef.current) return;
 
     const level = getRegionLevel(value);
     if (level >= 1 && topRegions?.data) {
@@ -125,10 +131,11 @@ export function RegionSelector({
         if (level === 1) {
           setSelectedL2('');
           setSelectedL3('');
-          appliedOnceRef.current = value;
-          // Propagate initial selection name once
+          // Propagate initial selection name once (same code)
           const name = getRegionName(l1Code, topRegions.data);
+          lastEmittedValueRef.current = toCode(l1Code);
           onChangeRef.current(toCode(l1Code), name);
+          didHydrateRef.current = true;
         }
       }
     }
@@ -136,9 +143,11 @@ export function RegionSelector({
 
   // Step 2: Set L2 when L1 is set and L2 regions are loaded
   useEffect(() => {
-    if (!value || !isLikelyRegionCode(value) || appliedOnceRef.current === value) {
+    if (!value || !isLikelyRegionCode(value)) {
       return;
     }
+
+    if (didHydrateRef.current) return;
 
     const level = getRegionLevel(value);
     if (level >= 2 && selectedL1 && l2Regions?.data) {
@@ -151,10 +160,11 @@ export function RegionSelector({
         setSelectedL2(toCode(l2Code));
         if (level === 2) {
           setSelectedL3('');
-          appliedOnceRef.current = value;
-          // Propagate initial selection name once
+          // Propagate initial selection name once (same code)
           const name = getRegionName(l2Code, l2Regions.data);
+          lastEmittedValueRef.current = toCode(l2Code);
           onChangeRef.current(toCode(l2Code), name);
+          didHydrateRef.current = true;
         }
       }
     }
@@ -162,9 +172,11 @@ export function RegionSelector({
 
   // Step 3: Set L3 when L2 is set and L3 regions are loaded
   useEffect(() => {
-    if (!value || !isLikelyRegionCode(value) || appliedOnceRef.current === value) {
+    if (!value || !isLikelyRegionCode(value)) {
       return;
     }
+
+    if (didHydrateRef.current) return;
 
     const level = getRegionLevel(value);
     if (level === 3 && selectedL2 && l3Regions?.data) {
@@ -175,10 +187,11 @@ export function RegionSelector({
       }
       if (hasRegion(l3Regions.data, l3FromPath)) {
         setSelectedL3(toCode(l3FromPath));
-        appliedOnceRef.current = value;
-        // Propagate initial selection name once
+        // Propagate initial selection name once (same code)
         const name = getRegionName(l3FromPath, l3Regions.data);
+        lastEmittedValueRef.current = toCode(l3FromPath);
         onChangeRef.current(toCode(l3FromPath), name);
+        didHydrateRef.current = true;
       }
     }
   }, [value, selectedL2, l3Regions, initialPath, selectedL3]);
@@ -189,10 +202,11 @@ export function RegionSelector({
     setSelectedL2('');
     setSelectedL3('');
     setInitialPath(null);
-    appliedOnceRef.current = ''; // Reset to allow new selection
+    didHydrateRef.current = true; // user-driven; stop hydration effects
 
     if (topRegions?.data) {
       const regionName = getRegionName(next, topRegions.data);
+      lastEmittedValueRef.current = next;
       onChangeRef.current(next, regionName);
     }
   };
@@ -202,10 +216,11 @@ export function RegionSelector({
     setSelectedL2(next);
     setSelectedL3('');
     setInitialPath(null);
-    appliedOnceRef.current = ''; // Reset to allow new selection
+    didHydrateRef.current = true; // user-driven; stop hydration effects
 
     if (l2Regions?.data) {
       const regionName = getRegionName(next, l2Regions.data);
+      lastEmittedValueRef.current = next;
       onChangeRef.current(next, regionName);
     }
   };
@@ -213,10 +228,11 @@ export function RegionSelector({
   const handleL3Change = (code: string) => {
     const next = toCode(code);
     setSelectedL3(next);
-    appliedOnceRef.current = ''; // Reset to allow new selection
+    didHydrateRef.current = true; // user-driven; stop hydration effects
 
     if (l3Regions?.data) {
       const regionName = getRegionName(next, l3Regions.data);
+      lastEmittedValueRef.current = next;
       onChangeRef.current(next, regionName);
     }
   };
