@@ -11,11 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Send, ImagePlus, X, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { RegionSelector } from '@/components/region/RegionSelector';
 
 interface PostFormData {
   title: string;
   content: string;
   regionCode: string;
+  regionName: string;
   imageUrls: string[];
 }
 
@@ -23,6 +25,7 @@ interface PostFormErrors {
   title?: string;
   content?: string;
   regionCode?: string;
+  regionName?: string;
   imageUrls?: string;
   general?: string;
 }
@@ -33,6 +36,7 @@ export function PostCreateForm() {
     title: '',
     content: '',
     regionCode: '',
+    regionName: '',
     imageUrls: [],
   });
   const [errors, setErrors] = useState<PostFormErrors>({});
@@ -77,7 +81,7 @@ export function PostCreateForm() {
     }
 
     if (!formData.regionCode.trim()) {
-      newErrors.regionCode = '지역을 입력해주세요.';
+      newErrors.regionCode = '지역을 선택해주세요.';
     }
 
     setErrors(newErrors);
@@ -107,6 +111,22 @@ export function PostCreateForm() {
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+    if (errors.general) {
+      setErrors((prev) => ({ ...prev, general: undefined }));
+    }
+  };
+
+  const handleRegionChange = (regionCode: string, regionName: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      regionCode,
+      regionName,
+    }));
+
+    // Clear region error when user selects a region
+    if (errors.regionCode) {
+      setErrors((prev) => ({ ...prev, regionCode: undefined }));
     }
     if (errors.general) {
       setErrors((prev) => ({ ...prev, general: undefined }));
@@ -174,15 +194,15 @@ export function PostCreateForm() {
               <Label htmlFor="regionCode">
                 지역 <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="regionCode"
-                placeholder="예: 서울시 강남구, 부산시 해운대구"
+              <RegionSelector
                 value={formData.regionCode}
-                onChange={(e) => handleInputChange('regionCode', e.target.value)}
-                className={errors.regionCode ? 'border-destructive' : ''}
+                onChange={handleRegionChange}
                 disabled={isSubmitting}
               />
               {errors.regionCode && <p className="text-sm text-destructive">{errors.regionCode}</p>}
+              {formData.regionName && (
+                <p className="text-xs text-muted-foreground">선택된 지역: {formData.regionName}</p>
+              )}
             </div>
 
             {/* Content */}

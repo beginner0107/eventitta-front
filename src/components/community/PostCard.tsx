@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Heart, MessageSquare, User, MapPin, Calendar } from 'lucide-react';
+import { RegionName } from '@/components/region/RegionDisplay';
 import Link from 'next/link';
 // Simple date formatter helper
 function formatTimeAgo(dateString: string): string {
@@ -45,7 +46,7 @@ export function PostCard({ post }: PostCardProps) {
             {post.regionCode && (
               <Badge variant="secondary" className="shrink-0">
                 <MapPin className="h-3 w-3 mr-1" />
-                {post.regionCode}
+                <RegionName regionCode={post.regionCode} />
               </Badge>
             )}
           </div>
