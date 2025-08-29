@@ -4,6 +4,18 @@ import * as React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
+import { Slot } from '@radix-ui/react-slot';
+
+interface DialogContextType {
+  onOpenChange: (open: boolean) => void;
+}
+
+const DialogContext = React.createContext<DialogContextType | null>(null);
+const useDialog = () => {
+  const ctx = React.useContext(DialogContext);
+  if (!ctx) throw new Error('Dialog components must be used within <Dialog>');
+  return ctx;
+};
 
 interface DialogProps {
   open?: boolean;
@@ -35,33 +47,25 @@ const Dialog = ({ open = false, onOpenChange = () => {}, children }: DialogProps
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-      />
+    <DialogContext.Provider value={{ onOpenChange }}>
+      <div className="fixed inset-0 z-50">
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={() => onOpenChange(false)}
+        />
 
-      {/* Dialog Container */}
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        {React.Children.map(children, (child) =>
-          React.isValidElement(child) ? React.cloneElement(child, { onOpenChange } as any) : child,
-        )}
+        {/* Dialog Container */}
+        <div className="fixed inset-0 flex items-center justify-center p-4">{children}</div>
       </div>
-    </div>
+    </DialogContext.Provider>
   );
 };
 
-interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  onOpenChange?: (open: boolean) => void;
-}
+interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-const DialogContent = ({
-  className,
-  children,
-  onOpenChange = () => {},
-  ...props
-}: DialogContentProps) => {
+const DialogContent = ({ className, children, ...props }: DialogContentProps) => {
+  const { onOpenChange } = useDialog();
   return (
     <div
       className={cn(
@@ -109,19 +113,22 @@ const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   />
 );
 
-interface DialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface DialogTriggerProps extends React.HTMLAttributes<HTMLElement> {
   asChild?: boolean;
 }
 
 const DialogTrigger = ({ asChild = false, children, onClick, ...props }: DialogTriggerProps) => {
   if (asChild && React.isValidElement(children)) {
-    const childProps = children.props as any;
-    return React.cloneElement(children, {
-      onClick: (e: React.MouseEvent<HTMLElement>) => {
-        onClick?.(e as any);
-        childProps.onClick?.(e);
-      },
-    } as any);
+    return (
+      <Slot
+        onClick={(e: React.MouseEvent<HTMLElement>) => {
+          onClick?.(e);
+        }}
+        {...props}
+      >
+        {children}
+      </Slot>
+    );
   }
 
   return (

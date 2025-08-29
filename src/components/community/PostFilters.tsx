@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 // Using native select for now
@@ -29,6 +29,26 @@ export function PostFilters({ onFiltersChange, loading }: PostFiltersProps) {
   const [searchType, setSearchType] = useState<GetPostsSearchType>('TITLE_CONTENT');
   const [regionCode, setRegionCode] = useState<string>('');
   const [showRegionSuggestions, setShowRegionSuggestions] = useState(false);
+
+  // Manage delayed hide of region suggestions safely
+  const hideSuggestionsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearHideTimer = () => {
+    if (hideSuggestionsTimeout.current) {
+      clearTimeout(hideSuggestionsTimeout.current);
+      hideSuggestionsTimeout.current = null;
+    }
+  };
+  const scheduleHideSuggestions = () => {
+    clearHideTimer();
+    hideSuggestionsTimeout.current = setTimeout(() => {
+      setShowRegionSuggestions(false);
+      hideSuggestionsTimeout.current = null;
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => clearHideTimer();
+  }, []);
 
   const handleSearch = () => {
     onFiltersChange({
@@ -82,10 +102,15 @@ export function PostFilters({ onFiltersChange, loading }: PostFiltersProps) {
             value={regionCode}
             onChange={(e) => {
               setRegionCode(e.target.value);
+              // If user is typing again, ensure any pending hide is canceled
+              clearHideTimer();
               setShowRegionSuggestions(e.target.value.length > 0);
             }}
-            onFocus={() => setShowRegionSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowRegionSuggestions(false), 200)}
+            onFocus={() => {
+              clearHideTimer();
+              setShowRegionSuggestions(true);
+            }}
+            onBlur={scheduleHideSuggestions}
             className="pr-8"
           />
           <MapPin className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils';
 
 interface DropdownContextType {
@@ -59,10 +60,11 @@ const DropdownMenuTrigger = ({ children, asChild = false, ...props }: DropdownMe
   const handleClick = () => setIsOpen(!isOpen);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      ...props,
-      onClick: handleClick,
-    } as any);
+    return (
+      <Slot {...props} onClick={handleClick}>
+        {children}
+      </Slot>
+    );
   }
 
   return (
@@ -122,27 +124,23 @@ const DropdownMenuItem = ({
   };
 
   if (asChild && React.isValidElement(children)) {
-    // For Next.js Link components, we need to close dropdown immediately
-    // before navigation happens
-    const handleAsChildClick = (e: React.MouseEvent<HTMLElement>) => {
-      // Close dropdown first
+    // For Next.js Link components, close dropdown before navigation
+    const handleAsChildClick = () => {
       setIsOpen(false);
-      // Then allow the original click to proceed
-      const childProps = children.props as any;
-      if (childProps.onClick) {
-        childProps.onClick(e);
-      }
     };
 
-    const childProps = children.props as any;
-    return React.cloneElement(children, {
-      className: cn(
-        'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
-        className,
-        childProps.className,
-      ),
-      onClick: handleAsChildClick,
-    } as any);
+    return (
+      <Slot
+        className={cn(
+          'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
+          className,
+        )}
+        onClick={handleAsChildClick}
+        {...props}
+      >
+        {children}
+      </Slot>
+    );
   }
 
   return (

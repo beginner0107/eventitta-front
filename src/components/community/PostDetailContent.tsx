@@ -65,10 +65,10 @@ export function PostDetailContent({ post }: PostDetailContentProps) {
   const updatedDate =
     post.updatedAt && post.updatedAt !== post.createdAt ? formatTimeAgo(post.updatedAt) : null;
 
-  // Check if current user is the author of the post
-  // We compare the current user's nickname with the post's author nickname
-  // This is a reasonable approximation until we get authorId in the API
-  const isAuthor = user && user.nickname === post.authorNickname;
+  // Author verification: rely on stable user ID when available.
+  // Prefer a backend-provided authorId/isMine; fall back to hiding controls.
+  const authorId = (post as unknown as { authorId?: number }).authorId;
+  const isAuthor = Boolean(user?.id && authorId && user.id === authorId);
 
   const deletePostMutation = useDelete({
     mutation: {
