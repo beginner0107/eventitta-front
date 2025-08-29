@@ -57,6 +57,7 @@
               "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
             }
           },
+          "204": { "description": "프로필 수정 성공" },
           "400": {
             "description": "잘못된 요청 데이터 (유효성 검사 실패)",
             "content": {
@@ -68,8 +69,7 @@
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } }
             }
-          },
-          "204": { "description": "프로필 수정 성공" }
+          }
         }
       },
       "delete": {
@@ -246,12 +246,12 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/MeetingDetailResponse" } }
             }
           },
-          "404": {
-            "description": "모임을 찾을 수 없는 경우",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
-          },
           "400": {
             "description": "이미 삭제된 모임인 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "404": {
+            "description": "모임을 찾을 수 없는 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           }
         }
@@ -282,11 +282,11 @@
             "description": "모임을 찾을 수 없는 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           },
+          "200": { "description": "모임 수정 성공" },
           "403": {
             "description": "모임 리더가 아닌 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
-          },
-          "200": { "description": "모임 수정 성공" }
+          }
         }
       },
       "delete": {
@@ -304,12 +304,12 @@
         ],
         "responses": {
           "204": { "description": "모임 삭제 성공" },
-          "404": {
-            "description": "모임을 찾을 수 없는 경우",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
-          },
           "400": {
             "description": "이미 삭제된 모임인 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
+          "404": {
+            "description": "모임을 찾을 수 없는 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           },
           "403": {
@@ -342,8 +342,8 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "이미 승인/거절된 신청인 경우",
+          "404": {
+            "description": "모임 또는 참가 신청을 찾을 수 없는 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           },
           "200": {
@@ -352,12 +352,12 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/ParticipantResponse" } }
             }
           },
-          "403": {
-            "description": "모임 리더가 아닌 경우",
+          "400": {
+            "description": "이미 승인/거절된 신청인 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           },
-          "404": {
-            "description": "모임 또는 참가 신청을 찾을 수 없는 경우",
+          "403": {
+            "description": "모임 리더가 아닌 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           }
         }
@@ -386,22 +386,22 @@
           }
         ],
         "responses": {
+          "404": {
+            "description": "모임 또는 참가 신청을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
           "200": {
             "description": "참가 신청 승인 성공",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ParticipantResponse" } }
             }
           },
-          "403": {
-            "description": "모임 리더가 아닌 경우",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
-          },
           "400": {
             "description": "이미 승인/거절된 신청이거나, 최대 인원 초과",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           },
-          "404": {
-            "description": "모임 또는 참가 신청을 찾을 수 없는 경우",
+          "403": {
+            "description": "모임 리더가 아닌 경우",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           }
         }
@@ -697,9 +697,9 @@
               "type": "number",
               "description": "현재 위치 기준 거리 필터링 (km)",
               "format": "double",
-              "example": 5
+              "example": 5.0
             },
-            "example": 5
+            "example": 5.0
           },
           {
             "name": "latitude",
@@ -771,15 +771,15 @@
           }
         ],
         "responses": {
+          "404": {
+            "description": "모임을 찾을 수 없는 경우",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
+          },
           "200": {
             "description": "참가 신청 성공",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/JoinMeetingResponse" } }
             }
-          },
-          "404": {
-            "description": "모임을 찾을 수 없는 경우",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ApiErrorResponse" } } }
           },
           "400": {
             "description": "이미 신청한 모임이거나, 모집 중이 아닌 모임, 또는 최대 인원 초과",
@@ -959,6 +959,26 @@
             "content": {
               "*/*": {
                 "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RegionDto" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/regions/options": {
+      "get": {
+        "tags": ["지역 API"],
+        "summary": "전체 지역 옵션 목록 조회",
+        "operationId": "getRegionOptions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RegionOptionDto" }
+                }
               }
             }
           }
@@ -1185,7 +1205,7 @@
         "properties": {
           "currentPassword": { "type": "string", "description": "현재 비밀번호" },
           "newPassword": {
-            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,\u003C.\u003E]).{8,20}$",
+            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,<.>]).{8,20}$",
             "type": "string",
             "description": "새 비밀번호",
             "example": "P@ssw0rd!"
@@ -1444,7 +1464,7 @@
             "example": "user@example.com"
           },
           "password": {
-            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,\u003C.\u003E]).{8,20}$",
+            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,<.>]).{8,20}$",
             "type": "string",
             "description": "비밀번호",
             "example": "P@ssw0rd!"
@@ -1479,7 +1499,7 @@
             "example": "user@example.com"
           },
           "password": {
-            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,\u003C.\u003E]).{8,20}$",
+            "pattern": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()\\-_=+{};:,<.>]).{8,20}$",
             "type": "string",
             "description": "비밀번호",
             "example": "P@ssw0rd!"
@@ -1526,6 +1546,18 @@
           }
         },
         "description": "지역 응답 DTO"
+      },
+      "RegionOptionDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "description": "지역 코드 (leaf)", "example": "1100110100" },
+          "fullCode": {
+            "type": "string",
+            "description": "전체 지역 코드 경로(부모, 자식 순서)",
+            "example": "1100000000-1100100000-1100110100"
+          }
+        },
+        "description": "셀렉트 박스용 지역 옵션 DTO"
       },
       "PageResponsePostSummaryDto": {
         "type": "object",
@@ -1594,6 +1626,12 @@
             "type": "string",
             "description": "작성자 프로필 이미지 URL",
             "example": "https://cdn.example.com/profile.jpg"
+          },
+          "authorId": {
+            "type": "integer",
+            "description": "작성자 ID",
+            "format": "int64",
+            "example": 1
           },
           "regionCode": { "type": "string", "description": "지역 코드", "example": "1100110100" },
           "likeCount": {
