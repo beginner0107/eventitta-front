@@ -1,8 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGetPost, useUpdate } from '@/api/eventitta';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useGetPost,
+  useUpdate,
+  getGetPostQueryKey,
+  getGetChildRegionsQueryKey,
+  getChildRegions,
+} from '@/api/eventitta';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +19,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Save, ImagePlus, X, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { RegionSelector } from '@/components/region/RegionSelector';
 
 interface PostFormData {
   title: string;
   content: string;
   regionCode: string;
+  regionName: string;
   imageUrls: string[];
 }
 
@@ -24,6 +33,7 @@ interface PostFormErrors {
   title?: string;
   content?: string;
   regionCode?: string;
+  regionName?: string;
   imageUrls?: string;
   general?: string;
 }
@@ -32,16 +42,34 @@ interface PostEditFormProps {
   postId: number;
 }
 
+const getRegionLevel = (code: string): number => {
+  if (!code) return 0;
+
+  // Level 1: XX00000000 (시/도)
+  if (code.endsWith('00000000') && !code.startsWith('00')) return 1;
+
+  // Level 2: XXXXX00000 (시/군/구)
+  if (code.endsWith('00000') && !code.substring(2, 5).includes('000')) return 2;
+
+  // Level 3: XXXXXXXXXX (읍/면/동)
+  if (!code.endsWith('00000')) return 3;
+
+  return 0;
+};
+
 export function PostEditForm({ postId }: PostEditFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<PostFormData>({
     title: '',
     content: '',
     regionCode: '',
+    regionName: '',
     imageUrls: [],
   });
   const [errors, setErrors] = useState<PostFormErrors>({});
   const [imageUrl, setImageUrl] = useState('');
+  const initialRegionCodeRef = useRef<string>('');
 
   const {
     data: postData,
@@ -56,6 +84,16 @@ export function PostEditForm({ postId }: PostEditFormProps) {
   const updatePostMutation = useUpdate({
     mutation: {
       onSuccess: () => {
+        // Invalidate the post query to refresh the data
+        queryClient.invalidateQueries({
+          queryKey: getGetPostQueryKey(postId),
+        });
+
+        // Also invalidate posts list queries
+        queryClient.invalidateQueries({
+          queryKey: ['/api/v1/posts'],
+        });
+
         router.push(`/community/${postId}`);
       },
       onError: (error: any) => {
@@ -69,16 +107,48 @@ export function PostEditForm({ postId }: PostEditFormProps) {
 
   // Initialize form data when post data is loaded
   useEffect(() => {
-    if (postData?.data) {
+    if (postData?.data && !initialRegionCodeRef.current) {
       const post = postData.data;
+      console.log('PostEditForm initializing with post data:', {
+        regionCode: post.regionCode,
+        type: typeof post.regionCode,
+      });
+
+      // Store initial region code to prevent it from being cleared
+      if (post.regionCode) {
+        initialRegionCodeRef.current = String(post.regionCode);
+      }
+
+      // Prefetch child regions if we have a region code
+      if (post.regionCode) {
+        const level = getRegionLevel(post.regionCode);
+        if (level >= 2) {
+          const l1Code = post.regionCode.substring(0, 2) + '00000000';
+          // Prefetch L2 regions
+          queryClient.prefetchQuery({
+            queryKey: getGetChildRegionsQueryKey(l1Code),
+            queryFn: () => getChildRegions(l1Code),
+          });
+        }
+        if (level === 3) {
+          const l2Code = post.regionCode.substring(0, 5) + '00000';
+          // Prefetch L3 regions
+          queryClient.prefetchQuery({
+            queryKey: getGetChildRegionsQueryKey(l2Code),
+            queryFn: () => getChildRegions(l2Code),
+          });
+        }
+      }
+
       setFormData({
         title: post.title || '',
         content: post.content || '',
         regionCode: post.regionCode || '',
+        regionName: '', // Will be set by RegionSelector when it loads
         imageUrls: post.images?.map((img) => img.imageUrl || '').filter(Boolean) || [],
       });
     }
-  }, [postData]);
+  }, [postData, queryClient]);
 
   const validateForm = (): boolean => {
     const newErrors: PostFormErrors = {};
@@ -100,7 +170,7 @@ export function PostEditForm({ postId }: PostEditFormProps) {
     }
 
     if (!formData.regionCode.trim()) {
-      newErrors.regionCode = '지역을 입력해주세요.';
+      newErrors.regionCode = '지역을 선택해주세요.';
     }
 
     setErrors(newErrors);
@@ -131,6 +201,22 @@ export function PostEditForm({ postId }: PostEditFormProps) {
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+    if (errors.general) {
+      setErrors((prev) => ({ ...prev, general: undefined }));
+    }
+  };
+
+  const handleRegionChange = (regionCode: string, regionName: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      regionCode,
+      regionName,
+    }));
+
+    // Clear region error when user selects a region
+    if (errors.regionCode) {
+      setErrors((prev) => ({ ...prev, regionCode: undefined }));
     }
     if (errors.general) {
       setErrors((prev) => ({ ...prev, general: undefined }));
@@ -251,15 +337,15 @@ export function PostEditForm({ postId }: PostEditFormProps) {
               <Label htmlFor="regionCode">
                 지역 <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="regionCode"
-                placeholder="예: 서울시 강남구, 부산시 해운대구"
-                value={formData.regionCode}
-                onChange={(e) => handleInputChange('regionCode', e.target.value)}
-                className={errors.regionCode ? 'border-destructive' : ''}
-                disabled={isSubmitting}
+              <RegionSelector
+                value={String(formData.regionCode || initialRegionCodeRef.current || '')}
+                onChange={handleRegionChange}
+                disabled={isSubmitting || !postData?.data}
               />
               {errors.regionCode && <p className="text-sm text-destructive">{errors.regionCode}</p>}
+              {formData.regionName && (
+                <p className="text-xs text-muted-foreground">선택된 지역: {formData.regionName}</p>
+              )}
             </div>
 
             {/* Content */}

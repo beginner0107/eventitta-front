@@ -29,6 +29,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { RegionName } from '@/components/region/RegionDisplay';
 
 // Simple date formatter helper (reused from PostCard)
 function formatTimeAgo(dateString: string): string {
@@ -65,10 +66,8 @@ export function PostDetailContent({ post }: PostDetailContentProps) {
   const updatedDate =
     post.updatedAt && post.updatedAt !== post.createdAt ? formatTimeAgo(post.updatedAt) : null;
 
-  // Author verification: rely on stable user ID when available.
-  // Prefer a backend-provided authorId/isMine; fall back to hiding controls.
-  const authorId = (post as unknown as { authorId?: number }).authorId;
-  const isAuthor = Boolean(user?.id && authorId && user.id === authorId);
+  // Author verification using the authorId from the API
+  const isAuthor = Boolean(user?.id && post.authorId && user.id === post.authorId);
 
   const deletePostMutation = useDelete({
     mutation: {
@@ -100,7 +99,7 @@ export function PostDetailContent({ post }: PostDetailContentProps) {
             {post.regionCode && (
               <Badge variant="secondary">
                 <MapPin className="h-3 w-3 mr-1" />
-                {post.regionCode}
+                <RegionName regionCode={post.regionCode} />
               </Badge>
             )}
           </div>

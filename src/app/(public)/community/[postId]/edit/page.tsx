@@ -8,7 +8,7 @@ interface PageProps {
 
 export default async function EditPostPage({ params }: PageProps) {
   const { postId: postIdParam } = await params;
-  const postId = parseInt(postIdParam, 10);
+  const postId = Number(postIdParam);
 
   if (isNaN(postId)) {
     return (
