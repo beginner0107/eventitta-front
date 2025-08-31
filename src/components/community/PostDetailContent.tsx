@@ -3,7 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { PostDetailDto, useDelete } from '@/api/eventitta';
+import {
+  PostDetailDto,
+  useDelete,
+  useLike,
+  useLikedPosts,
+  getGetPostQueryKey,
+  getLikedPostsQueryKey,
+} from '@/api/eventitta';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -88,10 +95,102 @@ export function PostDetailContent({ post }: PostDetailContentProps) {
     },
   });
 
+  // Get user's liked posts to determine current like status
+  const { data: likedPostsData } = useLikedPosts({
+    query: {
+      staleTime: 1000 * 60 * 2, // 2 minutes
+      retry: 1,
+      enabled: !!user, // Only fetch when user is authenticated
+    },
+  });
+
+  // Check if current post is in user's liked posts
+  const isLiked = likedPostsData?.data?.some((likedPost) => likedPost.id === post.id) || false;
+
+  // Like toggle mutation with optimistic updates
+  const likeMutation = useLike({
+    mutation: {
+      onMutate: async () => {
+        // Cancel outgoing refetches to prevent race conditions
+        await queryClient.cancelQueries({ queryKey: getGetPostQueryKey(post.id) });
+        await queryClient.cancelQueries({ queryKey: getLikedPostsQueryKey() });
+
+        // Snapshot previous values
+        const previousPost = queryClient.getQueryData(getGetPostQueryKey(post.id));
+        const previousLikedPosts = queryClient.getQueryData(getLikedPostsQueryKey());
+
+        // Calculate optimistic updates based on current state
+        const willBeLiked = !isLiked; // Toggle current state
+        const newLikeCount = willBeLiked
+          ? (post.likeCount || 0) + 1
+          : Math.max(0, (post.likeCount || 1) - 1);
+
+        // Optimistically update post like count
+        queryClient.setQueryData(getGetPostQueryKey(post.id), (old: any) => ({
+          ...old,
+          data: { ...old?.data, likeCount: newLikeCount },
+        }));
+
+        // Optimistically update liked posts list
+        queryClient.setQueryData(getLikedPostsQueryKey(), (old: any) => {
+          if (!old?.data) return old;
+
+          const oldData = old.data;
+          let newData;
+
+          if (willBeLiked) {
+            // Add current post to liked posts if not already there
+            const postExists = oldData.some((p: any) => p.id === post.id);
+            newData = postExists ? oldData : [...oldData, { id: post.id, ...post }];
+          } else {
+            // Remove current post from liked posts
+            newData = oldData.filter((p: any) => p.id !== post.id);
+          }
+
+          return { ...old, data: newData };
+        });
+
+        return { previousPost, previousLikedPosts };
+      },
+      onError: (err, _variables, context) => {
+        // Rollback optimistic updates on error
+        if (context?.previousPost) {
+          queryClient.setQueryData(getGetPostQueryKey(post.id), context.previousPost);
+        }
+        if (context?.previousLikedPosts) {
+          queryClient.setQueryData(getLikedPostsQueryKey(), context.previousLikedPosts);
+        }
+
+        console.error('Failed to toggle like:', err);
+      },
+      onSettled: () => {
+        // Always refetch to ensure data consistency after toggle
+        queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(post.id) });
+        queryClient.invalidateQueries({ queryKey: getLikedPostsQueryKey() });
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] === '/api/v1/posts',
+        });
+      },
+    },
+  });
+
   const handleDelete = () => {
     if (post.id) {
       setDeleteError(null);
       deletePostMutation.mutate({ postId: post.id });
+    }
+  };
+
+  const handleLikeToggle = () => {
+    // Check if user is authenticated
+    if (!user) {
+      // Redirect to login page or show login modal
+      router.push('/auth/login');
+      return;
+    }
+
+    if (post.id) {
+      likeMutation.mutate({ postId: post.id });
     }
   };
 
@@ -198,9 +297,18 @@ export function PostDetailContent({ post }: PostDetailContentProps) {
           {/* Action Buttons */}
           <div className="flex items-center justify-between mt-6 pt-4 border-t">
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm">
-                <Heart className="h-4 w-4 mr-2" />
-                좋아요 {post.likeCount || 0}
+              <Button
+                variant={isLiked ? 'default' : 'outline'}
+                size="sm"
+                onClick={handleLikeToggle}
+                disabled={likeMutation.isPending}
+              >
+                <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                {likeMutation.isPending
+                  ? '처리 중...'
+                  : user
+                    ? `${isLiked ? '좋아요됨' : '좋아요'} ${post.likeCount || 0}`
+                    : `좋아요 ${post.likeCount || 0}`}
               </Button>
               <Button variant="outline" size="sm">
                 <MessageSquare className="h-4 w-4 mr-2" />
