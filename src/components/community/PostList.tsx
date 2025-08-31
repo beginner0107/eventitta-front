@@ -28,7 +28,6 @@ export function PostList() {
   const { data, isLoading, error, refetch } = useGetPosts(filters, {
     query: {
       retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
     },
   });
 

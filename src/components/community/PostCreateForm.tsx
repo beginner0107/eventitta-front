@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreate } from '@/api/eventitta';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ interface PostFormErrors {
 
 export function PostCreateForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<PostFormData>({
     title: '',
     content: '',
@@ -45,6 +47,11 @@ export function PostCreateForm() {
   const createPostMutation = useCreate({
     mutation: {
       onSuccess: (response) => {
+        // Invalidate posts list queries to refresh the data
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] === '/api/v1/posts',
+        });
+
         const postId = response.data?.id;
         if (postId) {
           router.push(`/community/${postId}`);

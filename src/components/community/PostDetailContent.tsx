@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { PostDetailDto, useDelete } from '@/api/eventitta';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +59,7 @@ interface PostDetailContentProps {
 
 export function PostDetailContent({ post }: PostDetailContentProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -72,6 +74,11 @@ export function PostDetailContent({ post }: PostDetailContentProps) {
   const deletePostMutation = useDelete({
     mutation: {
       onSuccess: () => {
+        // Invalidate posts list queries to refresh the data
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] === '/api/v1/posts',
+        });
+
         router.push('/community');
       },
       onError: (error: any) => {

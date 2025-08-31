@@ -91,7 +91,7 @@ export function PostEditForm({ postId }: PostEditFormProps) {
 
         // Also invalidate posts list queries
         queryClient.invalidateQueries({
-          queryKey: ['/api/v1/posts'],
+          predicate: (query) => query.queryKey[0] === '/api/v1/posts',
         });
 
         router.push(`/community/${postId}`);
