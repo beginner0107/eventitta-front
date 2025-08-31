@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,6 +36,7 @@ const navigation = [
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
 
   const handleLogout = async () => {
@@ -86,17 +87,15 @@ export function Header() {
             <div className="h-8 w-8 animate-pulse bg-muted rounded-full" />
           ) : isAuthenticated && user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.profilePictureUrl || ''} alt={user.nickname || ''} />
-                    <AvatarFallback>
-                      {user.nickname ? user.nickname[0].toUpperCase() : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
+              <DropdownMenuTrigger className="relative h-8 w-8 rounded-full bg-transparent hover:bg-accent hover:text-accent-foreground transition-colors">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.profilePictureUrl || ''} alt={user.nickname || ''} />
+                  <AvatarFallback>
+                    {user.nickname ? user.nickname[0].toUpperCase() : 'U'}
+                  </AvatarFallback>
+                </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user.nickname}</p>
@@ -104,17 +103,13 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>프로필</span>
-                  </Link>
+                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>프로필</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>대시보드</span>
-                  </Link>
+                <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>대시보드</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

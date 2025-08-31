@@ -7,7 +7,15 @@ import { PostFilters } from './PostFilters';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MessageSquare, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import {
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
+import Link from 'next/link';
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -20,7 +28,6 @@ export function PostList() {
   const { data, isLoading, error, refetch } = useGetPosts(filters, {
     query: {
       retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
     },
   });
 
@@ -40,15 +47,19 @@ export function PostList() {
   if (error) {
     return (
       <div className="container max-w-4xl mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            게시글을 불러오는 중 오류가 발생했습니다.
-            <Button variant="link" className="p-0 ml-1 h-auto" onClick={() => refetch()}>
-              다시 시도
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <div className="bg-white border border-destructive/20 rounded-lg p-8 text-center">
+          <div className="bg-destructive/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">게시글을 불러올 수 없습니다</h3>
+          <p className="text-muted-foreground mb-4">
+            네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.
+          </p>
+          <Button onClick={() => refetch()} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            다시 시도
+          </Button>
+        </div>
       </div>
     );
   }
@@ -56,8 +67,17 @@ export function PostList() {
   return (
     <div className="container max-w-6xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">지역 커뮤니티</h1>
-        <p className="text-muted-foreground">동네 이웃들과 소통하고 정보를 나누는 공간입니다</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">지역 커뮤니티</h1>
+            <p className="text-muted-foreground">동네 이웃들과 소통하고 정보를 나누는 공간입니다</p>
+          </div>
+          <Link href="/community/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />글 작성하기
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <PostFilters onFiltersChange={handleFiltersChange} loading={isLoading} />
@@ -72,17 +92,58 @@ export function PostList() {
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="space-y-3">
-              <Skeleton className="h-48 rounded-lg" />
+            <div key={index} className="bg-white border rounded-lg p-4 space-y-3">
+              {/* Header with title and region */}
+              <div className="flex justify-between items-start">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+
+              {/* Author info */}
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-4 w-4 rounded-full" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-4 ml-4" />
+                <Skeleton className="h-4 w-8" />
+              </div>
+
+              {/* Date */}
+              <div className="flex justify-end">
+                <Skeleton className="h-4 w-16" />
+              </div>
             </div>
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-12">
-          <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">게시글이 없습니다</h3>
-          <p className="text-muted-foreground mb-4">첫 번째 게시글을 작성해보세요!</p>
-          <Button>글 작성하기</Button>
+        <div className="text-center py-16">
+          <div className="bg-muted/20 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <MessageSquare className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold mb-3">
+            {filters.keyword || filters.regionCode
+              ? '검색 결과가 없습니다'
+              : '아직 게시글이 없습니다'}
+          </h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            {filters.keyword || filters.regionCode
+              ? '다른 검색 조건을 시도해보거나 새로운 게시글을 작성해보세요.'
+              : '이 커뮤니티에 첫 번째 게시글을 작성해보세요!'}
+          </p>
+          <div className="flex justify-center gap-3">
+            {(filters.keyword || filters.regionCode) && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilters({ page: 0, size: DEFAULT_PAGE_SIZE });
+                }}
+              >
+                전체 게시글 보기
+              </Button>
+            )}
+            <Link href="/community/create">
+              <Button>글 작성하기</Button>
+            </Link>
+          </div>
         </div>
       ) : (
         <>

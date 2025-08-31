@@ -17,7 +17,6 @@ export function PostDetail({ postId }: PostDetailProps) {
   const { data, isLoading, error, refetch } = useGetPost(postId, {
     query: {
       retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
     },
   });
 

@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-// Using native select for now
-import { Search, Filter, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { GetPostsParams, GetPostsSearchType } from '@/api/eventitta';
+import { RegionSelector } from '@/components/region/RegionSelector';
 
 interface PostFiltersProps {
   onFiltersChange: (filters: GetPostsParams) => void;
@@ -16,6 +16,7 @@ export function PostFilters({ onFiltersChange, loading }: PostFiltersProps) {
   const [keyword, setKeyword] = useState('');
   const [searchType, setSearchType] = useState<GetPostsSearchType>('TITLE_CONTENT');
   const [regionCode, setRegionCode] = useState<string>('');
+  const [regionName, setRegionName] = useState<string>('');
 
   const handleSearch = () => {
     onFiltersChange({
@@ -29,10 +30,16 @@ export function PostFilters({ onFiltersChange, loading }: PostFiltersProps) {
   const handleClearFilters = () => {
     setKeyword('');
     setRegionCode('');
+    setRegionName('');
     setSearchType('TITLE_CONTENT');
     onFiltersChange({
       page: 0,
     });
+  };
+
+  const handleRegionChange = (code: string, name: string) => {
+    setRegionCode(code);
+    setRegionName(name);
   };
 
   const hasActiveFilters = keyword.trim() || regionCode;
@@ -62,13 +69,12 @@ export function PostFilters({ onFiltersChange, loading }: PostFiltersProps) {
           <option value="CONTENT">내용</option>
         </select>
 
-        <Input
-          type="text"
-          placeholder="지역 (예: 서울시 강남구)"
-          value={regionCode}
-          onChange={(e) => setRegionCode(e.target.value)}
-          className="w-full md:w-48"
-        />
+        <div className="w-full md:w-64">
+          <RegionSelector value={regionCode} onChange={handleRegionChange} disabled={loading} />
+          {regionName && (
+            <p className="text-xs text-muted-foreground mt-1">선택된 지역: {regionName}</p>
+          )}
+        </div>
 
         <div className="flex gap-2">
           <Button onClick={handleSearch} disabled={loading} className="whitespace-nowrap">
